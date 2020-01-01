@@ -1,0 +1,39 @@
+#!/bin/bash
+
+_APT_SOUTCE=${APT_SOURCE:-default}
+
+update_source_list() {
+    case $1 in 
+        default|official|debian)
+            echo "deb http://deb.debian.org/debian buster main" > /etc/apt/sources.list
+            echo "deb http://security.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list
+            echo "deb http://deb.debian.org/debian buster-updates main" >> /etc/apt/sources.list
+            ;;
+        aliyun)
+            echo "deb http://mirrors.aliyun.com/debian buster main" > /etc/apt/sources.list
+            echo "deb http://mirrors.aliyun.com/debian-security buster/updates main" >> /etc/apt/sources.list
+            echo "deb http://mirrors.aliyun.com/debian buster-updates main" >> /etc/apt/sources.list
+            ;;
+        163)
+            echo "deb http://mirrors.163.com/debian buster main" > /etc/apt/sources.list
+            echo "deb http://mirrors.163.com/debian-security buster/updates main" >> /etc/apt/sources.list
+            echo "deb http://mirrors.163.com/debian buster-updates main" >> /etc/apt/sources.list
+            ;;
+        *)
+            echo_yellow "WARN: apt source: \"$1\" not supported, default apt source will be used."
+            echo "deb http://deb.debian.org/debian buster main" > /etc/apt/sources.list
+            echo "deb http://security.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list
+            echo "deb http://deb.debian.org/debian buster-updates main" >> /etc/apt/sources.list
+            ;;
+    esac
+}
+
+IFS=',' read -ra SOURCES <<< "$_APT_SOUTCE"
+for source in "${SOURCES[@]}"; do
+    echo_green "Try apt source: $source. Command: \"apt-get $@\""
+	update_source_list $source
+    if /usr/bin/apt-get $@; then
+        break;
+    fi
+    echo_yellow "Apt source: $source failed. Will try next."
+done

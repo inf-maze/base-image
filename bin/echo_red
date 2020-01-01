@@ -1,0 +1,6 @@
+#!/bin/bash
+
+red="\033[1;31m"
+end="\033[0m"
+
+echo -e "${red}$@${end}"
