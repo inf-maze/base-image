@@ -2,7 +2,7 @@
 
 ### 模拟僵尸进程无法收割问题
 ```
-CONTAINER_ID=`docker run --rm -it -d --entrypoint "zombie-reaping-problem" infmaze/pid1-problems`
+CONTAINER_ID=`docker run --rm -d --entrypoint "zombie-reaping-problem" infmaze/pid1-problems`
 watch -n 1 docker exec -it $CONTAINER_ID ps jxf
 ```
 可以看到系统中最后残留了5个zombie进程.
@@ -11,7 +11,7 @@ watch -n 1 docker exec -it $CONTAINER_ID ps jxf
 
 使用tini 收割僵尸进程:
 ```
-CONTAINER_ID=`docker run --rm -it -d --entrypoint "/tini" infmaze/pid1-problems -- zombie-reaping-problem`
+CONTAINER_ID=`docker run --rm -d --entrypoint "/tini" infmaze/pid1-problems -- zombie-reaping-problem`
 watch -n 1 docker exec -it $CONTAINER_ID ps jxf
 ```
 可以看到僵尸进程已经不存在了.
@@ -20,7 +20,7 @@ watch -n 1 docker exec -it $CONTAINER_ID ps jxf
 
 ```
 # make signal-forwarding-problem subprocess of bash
-CONTAINER_ID=`docker run --rm -it -d --entrypoint "signal-forwarding-problem-entrypoint.sh" infmaze/pid1-problems`
+CONTAINER_ID=`docker run --rm -d --entrypoint "signal-forwarding-problem-entrypoint.sh" infmaze/pid1-problems`
 docker exec -it $CONTAINER_ID ps jxf
 docker stop --time=30 $CONTAINER_ID # wait 30 seconds before kill container
 ```
@@ -32,7 +32,7 @@ docker stop --time=30 $CONTAINER_ID # wait 30 seconds before kill container
 用tini 转发signal：
 ```
 # make signal-forwarding-problem subprocess of tini
-CONTAINER_ID=`docker run --rm -it -d --entrypoint "/tini" infmaze/pid1-problems -- signal-forwarding-problem`
+CONTAINER_ID=`docker run --rm -d --entrypoint "/tini" infmaze/pid1-problems -- signal-forwarding-problem`
 docker exec -it $CONTAINER_ID ps jxf
 docker stop --time=30 $CONTAINER_ID # wait 30 seconds before kill container
 ```
