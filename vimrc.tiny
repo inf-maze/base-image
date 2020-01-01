@@ -1,0 +1,23 @@
+filetype off
+set nocompatible
+set mouse-=a
+set encoding=utf-8
+set fileencodings=utf-8
+set termencoding=utf-8
+set fileencoding=utf-8
+set rnu
+set tabstop=4
+set shiftwidth=4
+set expandtab
+set cindent
+set autoindent
+set showmatch
+set cursorline
+set cursorcolumn
+set incsearch
+set hlsearch
+set ignorecase smartcase
+set nowrapscan
+set laststatus=2
+set nostartofline
+set ruler
