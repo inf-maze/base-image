@@ -1,4 +1,5 @@
-在这个demo中，我们用 tini 解决僵尸进程的收割问题和信号转发问题.
+为了简单起见, 在这个demo中, 我们用 tini 解决僵尸进程的收割问题和信号转发问题.
+
 ### 模拟僵尸进程无法收割问题
 ```
 CONTAINER_ID=`docker run --rm -it -d --entrypoint "zombie-reaping-problem" infmaze/pid1-problems`
@@ -24,14 +25,16 @@ docker exec -it $CONTAINER_ID ps jxf
 docker stop --time=30 $CONTAINER_ID # wait 30 seconds before kill container
 ```
 
-可以看到，执行 `docker stop` 时，容器不会立即停止，main 进程也没有收到任何signal, 30 秒之后 docker 把容器强制杀死。
+可以看到，执行 `docker stop` 时，容器不会立即停止，main 进程也没有收到任何 signal, 30 秒之后 docker 把容器强制杀死。
 
 ----------
+
 用tini 转发signal：
 ```
 # make signal-forwarding-problem subprocess of tini
 CONTAINER_ID=`docker run --rm -it -d --entrypoint "/tini" infmaze/pid1-problems -- signal-forwarding-problem`
-watch -n 1 docker exec -it $CONTAINER_ID ps jxf
+docker exec -it $CONTAINER_ID ps jxf
+docker stop --time=30 $CONTAINER_ID # wait 30 seconds before kill container
 ```
 
 可以看到执行 docker stop 之后，容器中的main 进程接收到 SIGTERM 信号，执行了cleanup 函数，并正常退出了.
