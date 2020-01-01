@@ -1,7 +1,7 @@
 在这个demo中，我们用 tini 解决僵尸进程的收割问题和信号转发问题.
 ### 模拟僵尸进程无法收割问题
 ```
-docker run --rm -it -d --entrypoint "zombie-reaping-problem" infmaze/pid1-problems
+CONTAINER_ID=`docker run --rm -it -d --entrypoint "zombie-reaping-problem" infmaze/pid1-problems`
 watch -n 1 docker exec -it $CONTAINER_ID ps jxf
 ```
 可以看到系统中最后残留了5个zombie进程.
