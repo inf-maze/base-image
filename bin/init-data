@@ -1,0 +1,105 @@
+#!/bin/bash
+set -euo pipefail
+
+# default dir of data.list file
+_DEFAULT_DATA_LIST_PATH="/home/taoshibo/workspace/github/base-image/_examples/data/"
+# default dir of which file will downloaded to
+_DEFAULT_DST_PATH="/home/taoshibo/workspace/github/base-image/_examples/data/"
+
+# trim string
+trim() {
+    local trimmed="$1"
+    # Strip leading space.
+    trimmed="${trimmed## }"
+    # Strip trailing space.
+    trimmed="${trimmed%% }"
+    echo "$trimmed"
+}
+
+# download file to specific directory
+download() {
+    url=$1
+    action=$2
+    dst=$3
+    
+    case $action in
+        # download files to dst directly.
+        "->")
+            echo downloading \"$url\" to \"$dst\".
+            cd $dst
+            curl -sSLOJ $url
+            cd -
+            ;;
+        # download files to dst and uncompress them if possible. e.g. files with extension ".tgz", ".tar.gz", ".zip"
+        "~>")
+            ;;
+        *)
+            echo_red "Unsupported action: \"$action\"."
+            ;;
+    esac
+}
+
+# parse data.list file
+parse_data_list() {
+    line_count=0
+	while IFS= read -r line; do
+        line_count=$((line_count+1))
+        # skip comment line
+		if [[ $line =~ ^[[:space:]]*#.* ]]; then
+			continue
+		fi
+        url=""
+        action=""
+        dst=""
+        case $line in
+            *"->"*)
+                url=${line%->*}
+                action="->"
+                dst=${line#*->}
+                ;;
+            *"~>"*)
+                url=${line%~>*}
+                action="~>"
+                dst=${line#*~>}
+                ;;
+            *)
+                url=${line}
+                ;;
+        esac
+        if [ -z $url ]; then
+            echo_red "ERROR: got empty url in line $line_count: \"$line\"";
+            continue
+        fi
+        if [ -z $action ]; then action="->"; fi
+        if [ -z $dst ]; then dst=$_DEFAULT_DST_PATH; fi
+        url=$(trim $url)
+        action=$(trim $action)
+        dst=$(trim $dst)
+        download $url $action $dst
+	done < $1
+}
+
+# use _DEFAULT_DATA_LIST_PATH if DATA_LIST_PATH not set
+_DATA_LIST_PATH=${DATA_LIST_PATH:-}
+if [ -z $_DATA_LIST_PATH ]; then _DATA_LIST_PATH=$_DEFAULT_DATA_LIST_PATH; fi
+
+# make sure _DATA_LIST_PATH is empty or absolute path
+if [[ ! $_DATA_LIST_PATH == /* ]];
+then
+    echo_red "data list path: \"$_DATA_LIST_PATH\" must be absolute path if not empty."
+    exit 1
+fi
+
+# make sure data.list file exists
+if [[ ! $_DATA_LIST_PATH == *data.list ]];
+then
+    _DATA_LIST_PATH="$_DATA_LIST_PATH/data.list"
+    if [ ! -f $_DATA_LIST_PATH ];
+    then
+        echo_red "ERROR: \"$_DATA_LIST_PATH\" doesn't exist or is not a regular file."
+        exit 1
+    fi
+    echo_green "data.list path: \"$_DATA_LIST_PATH"
+fi
+
+parse_data_list $_DATA_LIST_PATH
