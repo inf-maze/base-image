@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 _APT_SOUTCE=${APT_SOURCE:-default}
 
