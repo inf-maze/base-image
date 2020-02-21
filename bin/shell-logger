@@ -1,0 +1,17 @@
+#!/bin/bash
+
+declare -A _log_levels=([FATAL]=0 [ERROR]=1 [WARN]=2 [WARNING]=2 [INFO]=3 [DEBUG]=4 [VERBOSE]=5)
+declare -i _log_level=3
+
+set_log_level() {
+    level="${1:-INFO}"
+    _log_level="${_log_levels[$level]}"
+}
+
+log_fatal()   { if (( _log_level >= ${_log_levels[FATAL]} ));   then echo -e "\033[1;31m$(date '+%Y-%m-%d %H:%M:%S') FATAL  $*\033[0m"; fi }
+log_error()   { if (( _log_level >= ${_log_levels[ERROR]} ));   then echo -e "\033[1;31m$(date '+%Y-%m-%d %H:%M:%S') ERROR  $*\033[0m"; fi }
+log_warn()    { if (( _log_level >= ${_log_levels[WARN]} ));    then echo -e "\033[1;33m$(date '+%Y-%m-%d %H:%M:%S') WARN  $*\033[0m";  fi }
+log_warning() { if (( _log_level >= ${_log_levels[WARN]} ));    then echo -e "\033[1;33m$(date '+%Y-%m-%d %H:%M:%S') WARN  $*\033[0m";  fi }
+log_info()    { if (( _log_level >= ${_log_levels[INFO]} ));    then echo -e "$(date '+%Y-%m-%d %H:%M:%S') INFO  $*";  fi }
+log_debug()   { if (( _log_level >= ${_log_levels[DEBUG]} ));   then echo -e "$(date '+%Y-%m-%d %H:%M:%S') DEBUG  $*"; fi }
+log_verbose() { if (( _log_level >= ${_log_levels[VERBOSE]} )); then echo -e "$(date '+%Y-%m-%d %H:%M:%S') VERBOSE $*"; fi }

@@ -9,9 +9,8 @@ ENV PYTHONUNBUFFERED=1
 ENV APT_SOURCE 163,aliyun
 
 COPY bin/apt-get /usr/local/bin/apt-get
-COPY bin/echo_red /usr/local/bin/echo_red
-COPY bin/echo_green /usr/local/bin/echo_green
-COPY bin/echo_yellow /usr/local/bin/echo_yellow
+COPY bin/init-data /usr/local/bin/init-data
+COPY bin/shell-logger /usr/local/bin/shell-logger
 
 RUN ln -s /usr/local/bin/apt-get /usr/local/bin/apt
 

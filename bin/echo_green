@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# https://gist.github.com/daytonn/8677243
-green="\033[1;32m"
-end="\033[0m"
-
-echo -e "${green}$@${end}"
