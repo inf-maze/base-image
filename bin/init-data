@@ -1,81 +1,112 @@
 #!/bin/bash
-set -euo pipefail
+set -uo pipefail
 
-# default dir of data.list file
-_DEFAULT_DATA_LIST_PATH="/home/taoshibo/workspace/github/base-image/_examples/data/"
-# default dir of which file will downloaded to
-_DEFAULT_DST_PATH="/home/taoshibo/workspace/github/base-image/_examples/data/"
+# Set log level according to environment INIT_LOG_LEVEL, default level is INFO.
+# All available levels are VERBOSE, DEBUG, INFO, WARN, ERROR, FATAL
+source shell-logger
+_INIT_LOG_LEVEL=${INIT_LOG_LEVEL:-INFO}
+set_log_level $_INIT_LOG_LEVEL
 
-# trim string
+# Default dir of data.list file
+_DEFAULT_DATA_LIST_PATH=$(pwd)
+# Default dir of which file will downloaded to
+_DEFAULT_DATA_DST_PATH=$(pwd)
+
+# Trim string
 trim() {
-    local trimmed="$1"
-    # Strip leading space.
-    trimmed="${trimmed## }"
-    # Strip trailing space.
-    trimmed="${trimmed%% }"
-    echo "$trimmed"
+    if [ "$#" -lt 1 ]; then
+        echo ""
+    else
+        local trimmed="$1"
+        # Strip leading space.
+        trimmed="${trimmed## }"
+        # Strip trailing space.
+        trimmed="${trimmed%% }"
+        echo "$trimmed"
+    fi
 }
 
-# download file to specific directory
+# Download file to specific directory
 download() {
+    if [ "$#" -lt 2 ]; then
+        log_error "Usage: download <url> <filepath>"
+        return 1
+    fi
     url=$1
-    action=$2
-    dst=$3
-    
-    case $action in
-        # download files to dst directly.
-        "->")
-            echo downloading \"$url\" to \"$dst\".
-            cd $dst
-            curl -sSLOJ $url
-            cd -
-            ;;
-        # download files to dst and uncompress them if possible. e.g. files with extension ".tgz", ".tar.gz", ".zip"
-        "~>")
-            ;;
-        *)
-            echo_red "Unsupported action: \"$action\"."
-            ;;
-    esac
+    filepath=$2
+    log_info "downloading \"$url\" to \"$filepath\"."
+    curl -o $filepath -sSL $url
+    return $?
 }
 
 # parse data.list file
 parse_data_list() {
+    if [ "$#" -lt 2 ]; then
+        log_error "Usage: parse_data_list <data_list_path> <data_dst_path>"
+        return 1
+    fi
+    _DATA_DST_PATH=$2
     line_count=0
 	while IFS= read -r line; do
         line_count=$((line_count+1))
-        # skip comment line
-		if [[ $line =~ ^[[:space:]]*#.* ]]; then
-			continue
-		fi
-        url=""
-        action=""
-        dst=""
-        case $line in
-            *"->"*)
-                url=${line%->*}
-                action="->"
-                dst=${line#*->}
-                ;;
-            *"~>"*)
-                url=${line%~>*}
-                action="~>"
-                dst=${line#*~>}
-                ;;
-            *)
-                url=${line}
-                ;;
-        esac
-        if [ -z $url ]; then
-            echo_red "ERROR: got empty url in line $line_count: \"$line\"";
+        # skip empty line
+        if [ -z "$line" ]; then
+            log_debug "line $line_count is empty. skip."
             continue
         fi
-        if [ -z $action ]; then action="->"; fi
-        if [ -z $dst ]; then dst=$_DEFAULT_DST_PATH; fi
+        # skip comment line
+		if [[ $line =~ ^[[:space:]]*#.* ]]; then
+            log_debug "line $line_count is comment. skip."
+			continue
+		fi
+        # parse each field
+        line="$line"
+        url=`awk -F'|' '{print $1}' <<< $line`
+        dst=`awk -F'|' '{print $2}' <<< $line`
+        filename=`awk -F'|' '{print $3}' <<< $line`
+        need_decompress=`awk -F'|' '{print $4}' <<< $line`
+        # trim string
         url=$(trim $url)
-        action=$(trim $action)
         dst=$(trim $dst)
-        download $url $action $dst
+        filename=$(trim $filename)
+        need_decompress=$(trim $need_decompress)
+        # url can not be empty
+        if [ -z $url ]; then
+            log_error "ERROR: got empty url in line $line_count: \"$line\"";
+            continue
+        fi
+        if [ -z $dst ]; then dst=$_DATA_DST_PATH; fi
+        # extract filename from url
+        if [ -z $filename ]; then filename=`basename $url`; fi
+        if [ "$need_decompress" != "true" ]; then need_decompress="false"; fi
+
+        mkdir -p $dst
+        filepath="$dst/$filename"
+        log_debug "url:$url filepath:$filepath need_decompress:$need_decompress"
+        done_filepath="${filepath}_done"
+        # always download if filepath not exist
+        if [ ! -f $filepath ]; then rm -rf $done_filepath; fi
+        # if done file not found, remove incomplete file, and re-download it from url
+        if [ ! -f $done_filepath ];
+        then
+            rm -rf $filepath
+            download $url $filepath
+            if [ "$?" != 0 ]; then
+                log_error "download $url failed."
+                continue
+            fi
+            touch $done_filepath
+            # decompress compressed file, support ".tar.gz", ".tgz" only.
+            if [ "${need_decompress,,}" == "true" ]; then
+                if [[ $filepath =~ \.(tar\.gz|tgz)$ ]]; then
+                    tar zxf $filepath -C $dst
+                else
+                    log_error "Unsupported compress extension for $filepath."
+                fi
+            fi
+        else
+            log_debug "$url has been downloaded. skip."
+        fi
 	done < $1
 }
 
@@ -86,20 +117,28 @@ if [ -z $_DATA_LIST_PATH ]; then _DATA_LIST_PATH=$_DEFAULT_DATA_LIST_PATH; fi
 # make sure _DATA_LIST_PATH is empty or absolute path
 if [[ ! $_DATA_LIST_PATH == /* ]];
 then
-    echo_red "data list path: \"$_DATA_LIST_PATH\" must be absolute path if not empty."
+    log_error "data list path: \"$_DATA_LIST_PATH\" must be absolute path if not empty."
     exit 1
 fi
 
-# make sure data.list file exists
+# complete data.list suffix
 if [[ ! $_DATA_LIST_PATH == *data.list ]];
 then
     _DATA_LIST_PATH="$_DATA_LIST_PATH/data.list"
-    if [ ! -f $_DATA_LIST_PATH ];
-    then
-        echo_red "ERROR: \"$_DATA_LIST_PATH\" doesn't exist or is not a regular file."
-        exit 1
-    fi
-    echo_green "data.list path: \"$_DATA_LIST_PATH"
+fi
+log_debug "DATA_LIST_PATH: ${_DATA_LIST_PATH}"
+
+# make sure data.list file exists
+if [ ! -f $_DATA_LIST_PATH ];
+then
+    log_error "ERROR: \"$_DATA_LIST_PATH\" doesn't exist or is not a regular file."
+    exit 1
 fi
 
-parse_data_list $_DATA_LIST_PATH
+# use _DEFAULT_DATA_DST_PATH if DATA_DST_PATH not set
+_DATA_DST_PATH=${DATA_DST_PATH:-}
+if [ -z $_DATA_DST_PATH ]; then _DATA_DST_PATH=$_DEFAULT_DATA_DST_PATH; fi
+log_debug "DATA_DST_PATH: ${_DATA_DST_PATH}"
+
+parse_data_list $_DATA_LIST_PATH $_DATA_DST_PATH
+log_info "init-data done."

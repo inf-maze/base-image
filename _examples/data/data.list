@@ -1,6 +1,11 @@
-#this is comment
-https://github.com/just-containers/s6-overlay/releases/download/v1.22.1.0/s6-overlay-amd64.tar.gz.sig -> 
-https://github.com/just-containers/s6-overlay/releases/download/v1.22.1.0/s6-overlay-amd64.tar.gz
-#->
-#     -> 
-#https://github.com/just-containers/s6-overlay/releases/download/v1.22.1.0/s6-overlay-amd64.tar.gz ~>
+# format: url | target directory | filename | need decompress
+# Only single line comments are supported.
+https://raw.githubusercontent.com/inf-maze/base-image/master/_assets/file1.txt
+https://raw.githubusercontent.com/inf-maze/base-image/master/_assets/file1.txt ||
+https://raw.githubusercontent.com/inf-maze/base-image/master/_assets/file1.txt | | new_file1.txt |
+https://raw.githubusercontent.com/inf-maze/base-image/master/_assets/file1.txt | /tmp
+https://raw.githubusercontent.com/inf-maze/base-image/master/_assets/file1.txt | /tmp | new_file1.txt | false
+https://raw.githubusercontent.com/inf-maze/base-image/master/_assets/file1.txt | /tmp | new_file1.txt | true
+https://raw.githubusercontent.com/inf-maze/base-image/master/_assets/compressed.tgz | | | true
+https://raw.githubusercontent.com/inf-maze/base-image/master/_assets/compressed.tgz | | compressed_raw.tgz | false
+https://raw.githubusercontent.com/inf-maze/base-image/master/_assets/compressed.tgz | /tmp | | true
