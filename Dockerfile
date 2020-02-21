@@ -59,9 +59,9 @@ ENV S6_KILL_GRACETIME 30
 
 # optimize /etc/bash.bashrc
 # optimize /etc/inputrc
-COPY bashrc /etc/bash.bashrc
-COPY vimrc.tiny /etc/vim/vimrc.tiny
-COPY inputrc /etc/inputrc
+COPY conf/bashrc /etc/bash.bashrc
+COPY conf/vimrc.tiny /etc/vim/vimrc.tiny
+COPY conf/inputrc /etc/inputrc
 
 
 ENTRYPOINT ["/init"]
