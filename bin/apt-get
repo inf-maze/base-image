@@ -1,5 +1,11 @@
 #!/bin/bash
-set -e
+set -eu
+
+# Set log level according to environment INIT_LOG_LEVEL, default level is INFO.
+# All available levels are VERBOSE, DEBUG, INFO, WARN, ERROR, FATAL
+source shell-logger
+_APT_LOG_LEVEL=${APT_LOG_LEVEL:-INFO}
+set_log_level $_APT_LOG_LEVEL
 
 _APT_SOUTCE=${APT_SOURCE:-default}
 
@@ -20,8 +26,9 @@ update_source_list() {
             echo "deb http://mirrors.163.com/debian-security buster/updates main" >> /etc/apt/sources.list
             echo "deb http://mirrors.163.com/debian buster-updates main" >> /etc/apt/sources.list
             ;;
+        # you can add your own source as you need.
         *)
-            echo_yellow "WARN: apt source: \"$1\" not supported, default apt source will be used."
+            log_warn "WARN: apt source: \"$1\" not supported, default apt source will be used."
             echo "deb http://deb.debian.org/debian buster main" > /etc/apt/sources.list
             echo "deb http://security.debian.org/debian-security buster/updates main" >> /etc/apt/sources.list
             echo "deb http://deb.debian.org/debian buster-updates main" >> /etc/apt/sources.list
@@ -31,10 +38,10 @@ update_source_list() {
 
 IFS=',' read -ra SOURCES <<< "$_APT_SOUTCE"
 for source in "${SOURCES[@]}"; do
-    echo_green "Try apt source: $source. Command: \"apt-get $@\""
+    log_info "Try apt source: $source. Command: \"apt-get $@\""
 	update_source_list $source
     if /usr/bin/apt-get $@; then
         break;
     fi
-    echo_yellow "Apt source: $source failed. Will try next."
+    log_warn "Apt source: $source failed. Will try next."
 done
