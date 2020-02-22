@@ -77,9 +77,8 @@ int main(int argc, char **argv) {
     }
 
     waitpid(zombie_parent_pid, NULL, 0);
-    write_log("main process will exit after 300 seconds.");
-    for(int i = 0; i < 300; ++i)
-        sleep(1);
+    write_log("main process will exit after 60 seconds.");
+    for(int i = 0; i < 60; ++i) sleep(1);
     write_log("main process exit.");
     return 0;
 }
